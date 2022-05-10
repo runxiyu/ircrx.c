@@ -40,6 +40,7 @@ enum {
 	BufSz = 2048,
 	LogSz = 4096,
 	MaxRecons = 10, /* -1 for infinitely many */
+	PingDelay = 6,
 	UtfSz = 4,
 	RuneInvalid = 0xFFFD,
 };
@@ -462,6 +463,8 @@ scmd(char *usr, char *cmd, char *par, char *data)
 		}
 	} else if (!strcmp(cmd, "PING")) {
 		sndf("PONG :%s", data ? data : "(null)");
+	} else if (!strcmp(cmd, "PONG")) {
+		/* nothing */
 	} else if (!strcmp(cmd, "PART")) {
 		if (!pm)
 			return;
@@ -812,7 +815,7 @@ main(int argc, char *argv[])
 	const char *server = SRV;
 	const char *port = PORT;
 	char *err;
-	int o, reconn;
+	int o, reconn, ping;
 
 	signal(SIGPIPE, SIG_IGN);
 	while ((o = getopt(argc, argv, "thk:n:u:s:p:l:")) >= 0)
@@ -859,6 +862,7 @@ main(int argc, char *argv[])
 	chadd(server, 0);
 	sinit(key, nick, user);
 	reconn = 0;
+	ping = 0;
 	while (!quit) {
 		struct timeval t = {.tv_sec = 5};
 		struct Chan *c;
@@ -917,6 +921,13 @@ main(int argc, char *argv[])
 		if (FD_ISSET(0, &rfs)) {
 			tgetch();
 			wrefresh(scr.iw);
+		}
+		if (!FD_ISSET(srv.fd, &wfs))
+		if (!FD_ISSET(srv.fd, &rfs))
+		if (outp == outb)
+		if (++ping == PingDelay) {
+			sndf("PING %s", server);
+			ping = 0;
 		}
 	}
 	hangup();
