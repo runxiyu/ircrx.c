@@ -28,8 +28,8 @@
 #define SCROLL   15
 #define INDENT   23
 #define DATEFMT  "%H:%M"
-#define PFMT     "  %-12s < %s"
-#define PFMTHIGH "> %-12s < %s"
+#define PFMT     "  %-12s → %s"
+#define PFMTHIGH "→ %-12s → %s"
 #define SRV      "irc.oftc.net"
 #define PORT     "6667"
 
