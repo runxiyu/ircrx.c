@@ -46,7 +46,7 @@ enum {
 	MaxChans = 16,
 	BufSz = 2048,
 	LogSz = 4096,
-	MaxRecons = 10, /* -1 for infinitely many */
+	MaxRecons = 10,		/* -1 for infinitely many */
 	PingDelay = 6,
 	UtfSz = 4,
 	RuneInvalid = 0xFFFD,
@@ -63,11 +63,11 @@ static struct {
 static struct Chan {
 	char name[ChanLen];
 	char *buf, *eol;
-	int n;     /* Scroll offset. */
-	size_t sz; /* Size of buf. */
-	char high; /* Nick highlight. */
-	char new;  /* New message. */
-	char join; /* Channel was 'j'-oined. */
+	int n;			/* Scroll offset. */
+	size_t sz;		/* Size of buf. */
+	char high;		/* Nick highlight. */
+	char new;		/* New message. */
+	char join;		/* Channel was 'j'-oined. */
 } chl[MaxChans];
 
 static int ssl;
@@ -78,40 +78,36 @@ static struct {
 } srv;
 static char nick[64];
 static int quit, winchg;
-static int nch, ch; /* Current number of channels, and current channel. */
-static char outb[BufSz], *outp = outb; /* Output buffer. */
+static int nch, ch;		/* Current number of channels, and current channel. */
+static char outb[BufSz], *outp = outb;	/* Output buffer. */
 static FILE *logfp;
 
-static unsigned char utfbyte[UtfSz + 1] = {0x80,    0, 0xC0, 0xE0, 0xF0};
-static unsigned char utfmask[UtfSz + 1] = {0xC0, 0x80, 0xE0, 0xF0, 0xF8};
-static Rune utfmin[UtfSz + 1] = {       0,    0,  0x80,  0x800,  0x10000};
-static Rune utfmax[UtfSz + 1] = {0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF};
+static unsigned char utfbyte[UtfSz + 1] = { 0x80, 0, 0xC0, 0xE0, 0xF0 };
+static unsigned char utfmask[UtfSz + 1] = { 0xC0, 0x80, 0xE0, 0xF0, 0xF8 };
+static Rune utfmin[UtfSz + 1] = { 0, 0, 0x80, 0x800, 0x10000 };
+static Rune utfmax[UtfSz + 1] = { 0x10FFFF, 0x7F, 0x7FF, 0xFFFF, 0x10FFFF };
 
 static void scmd(char *, char *, char *, char *);
 static void tdrawbar(void);
 static void tredraw(void);
 static void treset(void);
 
-static void
-panic(const char *m)
+static void panic(const char *m)
 {
 	treset();
 	fprintf(stderr, "Panic: %s\n", m);
 	exit(1);
 }
 
-static size_t
-utf8validate(Rune *u, size_t i)
+static size_t utf8validate(Rune *u, size_t i)
 {
 	if (*u < utfmin[i] || *u > utfmax[i] || (0xD800 <= *u && *u <= 0xDFFF))
 		*u = RuneInvalid;
-	for (i = 1; *u > utfmax[i]; ++i)
-		;
+	for (i = 1; *u > utfmax[i]; ++i) ;
 	return i;
 }
 
-static Rune
-utf8decodebyte(unsigned char c, size_t *i)
+static Rune utf8decodebyte(unsigned char c, size_t *i)
 {
 	for (*i = 0; *i < UtfSz + 1; ++(*i))
 		if ((c & utfmask[*i]) == utfbyte[*i])
@@ -119,8 +115,7 @@ utf8decodebyte(unsigned char c, size_t *i)
 	return 0;
 }
 
-static size_t
-utf8decode(char *c, Rune *u, size_t clen)
+static size_t utf8decode(char *c, Rune *u, size_t clen)
 {
 	size_t i, j, len, type;
 	Rune udecoded;
@@ -143,14 +138,12 @@ utf8decode(char *c, Rune *u, size_t clen)
 	return len;
 }
 
-static char
-utf8encodebyte(Rune u, size_t i)
+static char utf8encodebyte(Rune u, size_t i)
 {
 	return utfbyte[i] | (u & ~utfmask[i]);
 }
 
-static size_t
-utf8encode(Rune u, char *c)
+static size_t utf8encode(Rune u, char *c)
 {
 	size_t len, i;
 
@@ -165,8 +158,7 @@ utf8encode(Rune u, char *c)
 	return len;
 }
 
-static void
-sndf(const char *fmt, ...)
+static void sndf(const char *fmt, ...)
 {
 	va_list vl;
 	size_t n, l = BufSz - (outp - outb);
@@ -181,15 +173,14 @@ sndf(const char *fmt, ...)
 	*outp++ = '\n';
 }
 
-static int
-srd(void)
+static int srd(void)
 {
 	static char l[BufSz], *p = l;
 	char *s, *usr, *cmd, *par, *data;
 	int rd;
 
 	if (p - l >= BufSz)
-		p = l; /* Input buffer overflow, there should something better to do. */
+		p = l;		/* Input buffer overflow, there should something better to do. */
 	if (ssl)
 		rd = SSL_read(srv.ssl, p, BufSz - (p - l));
 	else
@@ -197,7 +188,7 @@ srd(void)
 	if (rd <= 0)
 		return 0;
 	p += rd;
-	for (;;) { /* Cycle on all received lines. */
+	for (;;) {		/* Cycle on all received lines. */
 		if (!(s = memchr(l, '\n', p - l)))
 			return 1;
 		if (s > l && s[-1] == '\r')
@@ -218,14 +209,13 @@ srd(void)
 		if ((data = strchr(par, ':')))
 			*data++ = 0;
 		scmd(usr, cmd, par, data);
-	lskip:
+ lskip:
 		memmove(l, s, p - s);
 		p -= s - l;
 	}
 }
 
-static void
-sinit(const char *key, const char *nick, const char *user)
+static void sinit(const char *key, const char *nick, const char *user)
 {
 	if (key)
 		sndf("PASS %s", key);
@@ -234,20 +224,21 @@ sinit(const char *key, const char *nick, const char *user)
 	sndf("MODE %s +i", nick);
 }
 
-static char *
-dial(const char *host, const char *service)
+static char *dial(const char *host, const char *service)
 {
 	struct addrinfo hints, *res = NULL, *rp;
 	int fd = -1, e;
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;     /* allow IPv4 or IPv6 */
-	hints.ai_flags = AI_NUMERICSERV; /* avoid name lookup for port */
+	hints.ai_family = AF_UNSPEC;	/* allow IPv4 or IPv6 */
+	hints.ai_flags = AI_NUMERICSERV;	/* avoid name lookup for port */
 	hints.ai_socktype = SOCK_STREAM;
 	if ((e = getaddrinfo(host, service, &hints, &res)))
 		return "Getaddrinfo failed.";
 	for (rp = res; rp; rp = rp->ai_next) {
-		if ((fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol)) == -1)
+		if ((fd =
+		     socket(res->ai_family, res->ai_socktype,
+			    res->ai_protocol)) == -1)
 			continue;
 		if (connect(fd, res->ai_addr, res->ai_addrlen) == -1) {
 			close(fd);
@@ -266,15 +257,14 @@ dial(const char *host, const char *service)
 			return "Could not initialize ssl context.";
 		srv.ssl = SSL_new(srv.ctx);
 		if (SSL_set_fd(srv.ssl, srv.fd) == 0
-		|| SSL_connect(srv.ssl) != 1)
+		    || SSL_connect(srv.ssl) != 1)
 			return "Could not connect with ssl.";
 	}
 	freeaddrinfo(res);
 	return 0;
 }
 
-static void
-hangup(void)
+static void hangup(void)
 {
 	if (srv.ssl) {
 		SSL_shutdown(srv.ssl);
@@ -291,8 +281,7 @@ hangup(void)
 	}
 }
 
-static inline int
-chfind(const char *name)
+static inline int chfind(const char *name)
 {
 	int i;
 
@@ -303,8 +292,7 @@ chfind(const char *name)
 	return i;
 }
 
-static int
-chadd(const char *name, int joined)
+static int chadd(const char *name, int joined)
 {
 	int n;
 
@@ -327,8 +315,7 @@ chadd(const char *name, int joined)
 	return nch;
 }
 
-static int
-chdel(char *name)
+static int chdel(char *name)
 {
 	int n;
 
@@ -342,8 +329,7 @@ chdel(char *name)
 	return 1;
 }
 
-static char *
-pushl(char *p, char *e)
+static char *pushl(char *p, char *e)
 {
 	int x, cl;
 	char *w;
@@ -381,8 +367,7 @@ pushl(char *p, char *e)
 	}
 }
 
-static void
-pushf(int cn, const char *fmt, ...)
+static void pushf(int cn, const char *fmt, ...)
 {
 	struct Chan *const c = &chl[cn];
 	size_t n, blen = c->eol - c->buf;
@@ -433,8 +418,7 @@ pushf(int cn, const char *fmt, ...)
 	}
 }
 
-static void
-scmd(char *usr, char *cmd, char *par, char *data)
+static void scmd(char *usr, char *cmd, char *par, char *data)
 {
 	int s, c;
 	char *pm = strtok(par, " "), *chan;
@@ -480,7 +464,7 @@ scmd(char *usr, char *cmd, char *par, char *data)
 		if (!pm)
 			return;
 		pushf(chfind(pm), "-!- %s has joined %s", usr, pm);
-	} else if (!strcmp(cmd, "470")) { /* Channel forwarding. */
+	} else if (!strcmp(cmd, "470")) {	/* Channel forwarding. */
 		char *ch = strtok(0, " "), *fch = strtok(0, " ");
 
 		if (!ch || !fch || !(s = chfind(ch)))
@@ -489,28 +473,27 @@ scmd(char *usr, char *cmd, char *par, char *data)
 		strncat(chl[s].name, fch, ChanLen - 1);
 		tdrawbar();
 	} else if (!strcmp(cmd, "471") || !strcmp(cmd, "473")
-		   || !strcmp(cmd, "474") || !strcmp(cmd, "475")) { /* Join error. */
+		   || !strcmp(cmd, "474") || !strcmp(cmd, "475")) {	/* Join error. */
 		if ((pm = strtok(0, " "))) {
 			chdel(pm);
 			pushf(0, "-!- Cannot join channel %s (%s)", pm, cmd);
 			tredraw();
 		}
-	} else if (!strcmp(cmd, "QUIT")) { /* Commands we don't care about. */
+	} else if (!strcmp(cmd, "QUIT")) {	/* Commands we don't care about. */
 		return;
 	} else if (!strcmp(cmd, "NOTICE") || !strcmp(cmd, "375")
-	       || !strcmp(cmd, "372") || !strcmp(cmd, "376")) {
+		   || !strcmp(cmd, "372") || !strcmp(cmd, "376")) {
 		pushf(0, "%s", data ? data : "");
 	} else
 		pushf(0, "%s - %s %s", cmd, par, data ? data : "(null)");
 }
 
-static void
-uparse(char *m)
+static void uparse(char *m)
 {
 	char *p = m;
 
 	if (!p[0] || (p[1] != ' ' && p[1] != 0)) {
-	pmsg:
+ pmsg:
 		if (ch == 0)
 			return;
 		m += strspn(m, " ");
@@ -521,7 +504,7 @@ uparse(char *m)
 		return;
 	}
 	switch (*p) {
-	case 'j': /* Join channels. */
+	case 'j':		/* Join channels. */
 		p += 1 + (p[1] == ' ');
 		p = strtok(p, " ");
 		while (p) {
@@ -532,11 +515,11 @@ uparse(char *m)
 		}
 		tredraw();
 		return;
-	case 'l': /* Leave channels. */
+	case 'l':		/* Leave channels. */
 		p += 1 + (p[1] == ' ');
 		if (!*p) {
 			if (ch == 0)
-				return; /* Cannot leave server window. */
+				return;	/* Cannot leave server window. */
 			strcat(p, chl[ch].name);
 		}
 		p = strtok(p, " ");
@@ -547,34 +530,32 @@ uparse(char *m)
 		}
 		tredraw();
 		return;
-	case 'm': /* Private message. */
+	case 'm':		/* Private message. */
 		m = p + 1 + (p[1] == ' ');
 		if (!(p = strchr(m, ' ')))
 			return;
 		*p++ = 0;
 		sndf("PRIVMSG %s :%s", m, p);
 		return;
-	case 'r': /* Send raw. */
+	case 'r':		/* Send raw. */
 		if (p[1])
 			sndf("%s", &p[2]);
 		return;
-	case 'q': /* Quit. */
+	case 'q':		/* Quit. */
 		quit = 1;
 		return;
-	default: /* Send on current channel. */
+	default:		/* Send on current channel. */
 		goto pmsg;
 	}
 }
 
-static void
-sigwinch(int sig)
+static void sigwinch(int sig)
 {
 	if (sig)
 		winchg = 1;
 }
 
-static void
-tinit(void)
+static void tinit(void)
 {
 	setlocale(LC_ALL, "");
 	signal(SIGWINCH, sigwinch);
@@ -585,8 +566,8 @@ tinit(void)
 	if (scr.y < 4)
 		panic("Screen too small.");
 	if ((scr.sw = newwin(1, scr.x, 0, 0)) == 0
-	|| (scr.mw = newwin(scr.y - 2, scr.x, 1, 0)) == 0
-	|| (scr.iw = newwin(1, scr.x, scr.y - 1, 0)) == 0)
+	    || (scr.mw = newwin(scr.y - 2, scr.x, 1, 0)) == 0
+	    || (scr.iw = newwin(1, scr.x, scr.y - 1, 0)) == 0)
 		panic("Cannot create windows.");
 	keypad(scr.iw, 1);
 	scrollok(scr.mw, 1);
@@ -598,8 +579,7 @@ tinit(void)
 	}
 }
 
-static void
-tresize(void)
+static void tresize(void)
 {
 	struct winsize ws;
 
@@ -617,8 +597,7 @@ tresize(void)
 	tdrawbar();
 }
 
-static void
-tredraw(void)
+static void tredraw(void)
 {
 	struct Chan *const c = &chl[ch];
 	char *q, *p;
@@ -656,8 +635,7 @@ tredraw(void)
 	wrefresh(scr.mw);
 }
 
-static void
-tdrawbar(void)
+static void tdrawbar(void)
 {
 	size_t l;
 	int fst = ch;
@@ -685,8 +663,7 @@ tdrawbar(void)
 	wrefresh(scr.sw);
 }
 
-static void
-tgetch(void)
+static void tgetch(void)
 {
 	static char l[BufSz];
 	static size_t shft, cu, len;
@@ -762,9 +739,12 @@ tgetch(void)
 		if (cu == 0)
 			break;
 		i = 1;
-		while (l[cu - i] == ' ' && cu - i != 0) i++;
-		while (l[cu - i] != ' ' && cu - i != 0) i++;
-		if (cu - i != 0) i--;
+		while (l[cu - i] == ' ' && cu - i != 0)
+			i++;
+		while (l[cu - i] != ' ' && cu - i != 0)
+			i++;
+		if (cu - i != 0)
+			i--;
 		memmove(&l[cu - i], &l[cu], len - cu);
 		cu -= i;
 		dirty = cu;
@@ -777,7 +757,7 @@ tgetch(void)
 		break;
 	default:
 		if (c > CHAR_MAX || len >= BufSz - 1)
-			return; /* Skip other curses codes. */
+			return;	/* Skip other curses codes. */
 		memmove(&l[cu + 1], &l[cu], len - cu);
 		dirty = cu;
 		len++;
@@ -798,11 +778,10 @@ tgetch(void)
 	wclrtoeol(scr.iw);
 	for (; i - shft < scr.x && i < len; i++)
 		waddch(scr.iw, l[i]);
-mvcur:	wmove(scr.iw, 0, cu - shft);
+ mvcur:wmove(scr.iw, 0, cu - shft);
 }
 
-static void
-treset(void)
+static void treset(void)
 {
 	if (scr.mw)
 		delwin(scr.mw);
@@ -813,8 +792,7 @@ treset(void)
 	endwin();
 }
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
 	const char *user = getenv("USER");
 	const char *ircnick = getenv("USER");
@@ -829,8 +807,10 @@ main(int argc, char *argv[])
 		switch (o) {
 		case 'h':
 		case '?':
-		usage:
-			fputs("usage: irc [-n NICK] [-u USER] [-s SERVER] [-p PORT] [-l LOGFILE] [-t] [-h]\n", stderr);
+ usage:
+			fputs
+			    ("usage: irc [-n NICK] [-u USER] [-s SERVER] [-p PORT] [-l LOGFILE] [-t] [-h]\n",
+			     stderr);
 			exit(0);
 		case 'l':
 			if (!(logfp = fopen(optarg, "a")))
@@ -871,7 +851,7 @@ main(int argc, char *argv[])
 	reconn = 0;
 	ping = 0;
 	while (!quit) {
-		struct timeval t = {.tv_sec = 5};
+		struct timeval t = {.tv_sec = 5 };
 		struct Chan *c;
 		fd_set rfs, wfs;
 		int ret;
@@ -930,12 +910,12 @@ main(int argc, char *argv[])
 			wrefresh(scr.iw);
 		}
 		if (!FD_ISSET(srv.fd, &wfs))
-		if (!FD_ISSET(srv.fd, &rfs))
-		if (outp == outb)
-		if (++ping == PingDelay) {
-			sndf("PING %s", server);
-			ping = 0;
-		}
+			if (!FD_ISSET(srv.fd, &rfs))
+				if (outp == outb)
+					if (++ping == PingDelay) {
+						sndf("PING %s", server);
+						ping = 0;
+					}
 	}
 	hangup();
 	while (nch--)
