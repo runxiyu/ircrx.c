@@ -1,5 +1,7 @@
-IRC client                              https://c9x.me/irc/
-===========================================================
+ircrx, an IRC client
+====================
+
+This is a fork of https://c9x.me/irc.
 
 This is a simple irc client, it requires the ncurses
 library to compile.
@@ -8,9 +10,9 @@ Usage: irc [OPTIONS]
 
      OPTION                                DEFAULT
 
-    -n NICK     Sets the nick              $IRCNICK
+    -n NICK     Sets the nick              $USER
     -u USER     Sets the username          $USER
-    -s SERVER   Server to connect to       irc.oftc.net 
+    -s SERVER   Server to connect to       localhost
     -p PORT     Port to connect to         6667
     -l FILE     File to log recieved data 
     -t          Use a secured connection
