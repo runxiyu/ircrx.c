@@ -1,5 +1,8 @@
+# SPDX-License-Identifier: CC0-1.0
+
 BIN = irc
 
+# TODO: Don't use weird GCC extensions
 CFLAGS = -std=c99 -Os -D_POSIX_C_SOURCE=201112 -D_GNU_SOURCE -D_XOPEN_CURSES -D_XOPEN_SOURCE_EXTENDED=1 -D_DEFAULT_SOURCE -D_BSD_SOURCE
 LDLIBS = -lncursesw -lssl -lcrypto
 
