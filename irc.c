@@ -1,3 +1,10 @@
+/*
+ * IRC Client
+ * Written by Quentin Carbonneaux <https://c9x.me>
+ * Modified by Runxi Yu <https://runxiyu.org>
+ * SPDX-License-Identifier: CC0-1.0
+ */
+
 #include <assert.h>
 #include <limits.h>
 #include <signal.h>
@@ -30,7 +37,7 @@
 #define DATEFMT  "%H:%M"
 #define PFMT     "  %-12s → %s"
 #define PFMTHIGH "→ %-12s → %s"
-#define SRV      "irc.oftc.net"
+#define SRV      "localhost"
 #define PORT     "6667"
 
 enum {
@@ -810,7 +817,7 @@ int
 main(int argc, char *argv[])
 {
 	const char *user = getenv("USER");
-	const char *ircnick = getenv("IRCNICK");
+	const char *ircnick = getenv("USER");
 	const char *key = getenv("IRCPASS");
 	const char *server = SRV;
 	const char *port = PORT;
@@ -823,7 +830,7 @@ main(int argc, char *argv[])
 		case 'h':
 		case '?':
 		usage:
-			fputs("usage: irc [-n NICK] [-u USER] [-s SERVER] [-p PORT] [-l LOGFILE ] [-t] [-h]\n", stderr);
+			fputs("usage: irc [-n NICK] [-u USER] [-s SERVER] [-p PORT] [-l LOGFILE] [-t] [-h]\n", stderr);
 			exit(0);
 		case 'l':
 			if (!(logfp = fopen(optarg, "a")))
