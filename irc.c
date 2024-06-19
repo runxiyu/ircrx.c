@@ -78,7 +78,8 @@ static struct {
 } srv;
 static char nick[64];
 static int quit, winchg;
-static int nch, ch;		/* Current number of channels, and current channel. */
+static int nch, ch;		/* Current number of channels, and current 
+				 * channel. */
 static char outb[BufSz], *outp = outb;	/* Output buffer. */
 static FILE *logfp;
 
@@ -180,7 +181,8 @@ static int srd(void)
 	int rd;
 
 	if (p - l >= BufSz)
-		p = l;		/* Input buffer overflow, there should something better to do. */
+		p = l;		/* Input buffer overflow, there should
+				 * something better to do. */
 	if (ssl)
 		rd = SSL_read(srv.ssl, p, BufSz - (p - l));
 	else
@@ -455,7 +457,9 @@ static void scmd(char *usr, char *cmd, char *par, char *data)
 	} else if (!strcmp(cmd, "PING")) {
 		sndf("PONG :%s", data ? data : "(null)");
 	} else if (!strcmp(cmd, "PONG")) {
-		/* nothing */
+		/*
+		 * nothing 
+		 */
 	} else if (!strcmp(cmd, "PART")) {
 		if (!pm)
 			return;
@@ -473,7 +477,8 @@ static void scmd(char *usr, char *cmd, char *par, char *data)
 		strncat(chl[s].name, fch, ChanLen - 1);
 		tdrawbar();
 	} else if (!strcmp(cmd, "471") || !strcmp(cmd, "473")
-		   || !strcmp(cmd, "474") || !strcmp(cmd, "475")) {	/* Join error. */
+		   || !strcmp(cmd, "474") || !strcmp(cmd, "475")) {	/* Join
+									 * error. */
 		if ((pm = strtok(0, " "))) {
 			chdel(pm);
 			pushf(0, "-!- Cannot join channel %s (%s)", pm, cmd);
@@ -909,13 +914,11 @@ int main(int argc, char *argv[])
 			tgetch();
 			wrefresh(scr.iw);
 		}
-		if (!FD_ISSET(srv.fd, &wfs))
-			if (!FD_ISSET(srv.fd, &rfs))
-				if (outp == outb)
-					if (++ping == PingDelay) {
-						sndf("PING %s", server);
-						ping = 0;
-					}
+		if ((!FD_ISSET(srv.fd, &wfs)) && (!FD_ISSET(srv.fd, &rfs))
+		    && (outp == outb) && (++ping == PingDelay)) {
+			sndf("PING %s", server);
+			ping = 0;
+		}
 	}
 	hangup();
 	while (nch--)
